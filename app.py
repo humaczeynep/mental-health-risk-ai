@@ -1,7 +1,11 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import shap
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except:
+    SHAP_AVAILABLE = False
 
 st.set_page_config(
     page_title="MindLens AI",
@@ -117,6 +121,8 @@ if st.button("Analiz Et", use_container_width=True):
         st.metric("Tahmin", label_map[prediction])
 
 
+if SHAP_AVAILABLE:
+
     input_transformed = preprocessor.transform(input_df)
     explainer = shap.TreeExplainer(xgb)
     shap_values = explainer.shap_values(input_transformed)
@@ -143,6 +149,7 @@ if st.button("Analiz Et", use_container_width=True):
         .str.replace("cat__", "")
         .str.replace("remainder__", "")
     )
+
 
     feature_translation = {
         "Age": "Yaş",
@@ -173,11 +180,8 @@ if st.button("Analiz Et", use_container_width=True):
     }
 
     top_features["feature"] = top_features["feature"].apply(
-    lambda x: feature_translation.get(
-        x.replace("cat__", "").replace("remainder__", ""),
-        x
+        lambda x: feature_translation.get(x, x)
     )
-)
 
     st.subheader("🔍 Bu Sonuç Neden Oluştu?")
 
@@ -185,7 +189,6 @@ if st.button("Analiz Et", use_container_width=True):
         st.write(f"• **{row['feature']}** → `{row['impact']:.3f}`")
 
     st.bar_chart(top_features.set_index("feature")["abs"])
-
 
     st.subheader("💡 Kişiselleştirilmiş Öneriler")
 
@@ -203,3 +206,6 @@ if st.button("Analiz Et", use_container_width=True):
 
         elif "Sosyal" in f:
             st.info("🧠 Sosyal karşılaştırmayı azalt.")
+
+else:
+    st.warning("🔍 SHAP analizi şu anda cloud ortamında çalışmıyor")
