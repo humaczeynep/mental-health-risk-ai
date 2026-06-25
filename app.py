@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import shap
 
 st.set_page_config(
     page_title="MindLens AI",
@@ -117,89 +116,5 @@ if st.button("Analiz Et", use_container_width=True):
         st.metric("Tahmin", label_map[prediction])
 
 
-    input_transformed = preprocessor.transform(input_df)
-    explainer = shap.TreeExplainer(xgb)
-    shap_values = explainer.shap_values(input_transformed)
-
-    feature_names = preprocessor.get_feature_names_out()
-
-    if isinstance(shap_values, list):
-        shap_values = shap_values[prediction]
-
-    shap_values = shap_values[0].reshape(-1)
-
-    shap_df = pd.DataFrame({
-        "feature": feature_names[:len(shap_values)],
-        "impact": shap_values[:len(feature_names)]
-    })
-
-    shap_df["abs"] = shap_df["impact"].abs()
-
-    top_features = shap_df.sort_values("abs", ascending=False).head(5)
-
-
-    top_features["feature"] = (
-        top_features["feature"]
-        .str.replace("cat__", "")
-        .str.replace("remainder__", "")
-    )
-
-    feature_translation = {
-        "Age": "Yaş",
-        "Daily_Screen_Time_Hours": "Ekran Süresi",
-        "Sleep_Duration_Hours": "Uyku Süresi",
-        "Risk_Score": "Risk Skoru",
-        "Late_Night_Usage": "Gece Kullanımı",
-        "Social_Comparison_Trigger": "Sosyal Karşılaştırma",
-        "Activity_Type_Active": "Aktif Kullanım",
-        "Activity_Type_Passive": "Pasif Kullanım",
-        "Primary_Platform_Facebook": "Facebook",
-        "Primary_Platform_Instagram": "Instagram",
-        "Primary_Platform_TikTok": "TikTok",
-        "Primary_Platform_X": "X (Twitter)",
-        "Primary_Platform_YouTube": "YouTube",
-        "User_Archetype_Hyper-Connected": "Aşırı Bağlı Kullanıcı",
-        "User_Archetype_Balanced User": "Dengeli Kullanıcı",
-        "User_Archetype_Passive Scroller": "Pasif Kullanıcı",
-        "User_Archetype_Content Creator": "İçerik Üreticisi",
-        "User_Archetype_Average User": "Ortalama Kullanıcı",
-        "User_Archetype_Digital Minimalist": "Dijital Minimalist",
-        "Dominant_Content_Type_Self-Help/Motivation": "Kişisel Gelişim / Motivasyon",
-        "Dominant_Content_Type_Educational/Tech": "Eğitim / Teknoloji",
-        "Dominant_Content_Type_News/Politics": "Haberler / Politika",
-        "Dominant_Content_Type_Lifestyle/Fashion": "Yaşam Tarzı / Moda",
-        "Dominant_Content_Type_Entertainment/Comedy": "Eğlence / Mizah",
-        "Dominant_Content_Type_Gaming": "Oyun"
-    }
-
-    top_features["feature"] = top_features["feature"].apply(
-    lambda x: feature_translation.get(
-        x.replace("cat__", "").replace("remainder__", ""),
-        x
-    )
 )
 
-    st.subheader("🔍 Bu Sonuç Neden Oluştu?")
-
-    for _, row in top_features.iterrows():
-        st.write(f"• **{row['feature']}** → `{row['impact']:.3f}`")
-
-    st.bar_chart(top_features.set_index("feature")["abs"])
-
-
-    st.subheader("💡 Kişiselleştirilmiş Öneriler")
-
-    for _, row in top_features.iterrows():
-        f = row["feature"]
-
-        if "Uyku" in f:
-            st.info("💤 Uyku düzenini iyileştir.")
-
-        elif "Ekran" in f:
-            st.info("📱 Ekran süreni azalt.")
-
-        elif "Gece" in f:
-            st.info("🌙 Gece kullanımını sınırlandır.")
-
-        elif "Sosyal" in f:
-            st.info("🧠 Sosyal karşılaştırmayı azalt.")
